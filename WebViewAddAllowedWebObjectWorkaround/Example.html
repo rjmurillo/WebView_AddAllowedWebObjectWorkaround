@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<body>
+<h1>AddWebAllowedObject Workaround Example</h1>
+<div id='buttons'></div>
+<div id='log'></div>
+<!--
+Can include if you wish, or inject via C#
+I've included it below so I can debug with DevTools
+-->
+<script src="Bridge.js"></script>
+
+<script>
+    var log = function(m, d) {
+        var e = document.getElementById('log'),
+            l = document.createElement('div');
+
+        l.innerHTML = m + ':<br />' + JSON.stringify(d);
+        if (e.children.length) {
+            e.insertBefore(l, e.children[0]);
+        } else {
+            e.appendChild(l);
+        }
+    },
+    ConnectWebViewBridge = function(callback) {
+        if (window.JavaScriptBridge) {
+            callback(JavaScriptBridge);
+        } else {
+            log('Waiting for JavaScriptBridgeReady event');
+            document.addEventListener('JavaScriptBridgeReady',
+                function () {
+                    log('JavaScriptBridgeReady event fired');
+                    callback(JavaScriptBridge);
+                },
+                false);
+        }
+    };
+
+    window.onerror = function (err) {
+        console.log('window.onerror: ' + err);
+        log(err);
+    }
+
+    ConnectWebViewBridge(function(bridge) {
+
+
+        var button = document.getElementById('buttons').appendChild(document.createElement('button'));
+
+        button.innerHTML = 'Send message to Native';
+        button.onclick = function (e) {
+            e.preventDefault();
+            var data = 'Hello from JS button';
+            log('JS sending message', data);
+            bridge.send(data,
+                function(responseData) {
+                    log('JS got response', responseData);
+
+                });
+        }
+
+        document.body.appendChild(document.createElement('br'));
+
+        var callbackButton = document.getElementById('buttons').appendChild(document.createElement('button'));
+        callbackButton.innerHTML = 'Fire MethodNoArgs';
+        callbackButton.onclick = function (e) {
+            e.preventDefault();
+            var data = null;
+            log('JS calling handler "MethodNoArgs"', data);
+            bridge.callNative('MethodNoArgs',
+                data,
+                function (response) {
+                    log('JS got response', response);
+                });
+        }
+
+        document.body.appendChild(document.createElement('br'));
+
+        var callbackButtonArgs = document.getElementById('buttons').appendChild(document.createElement('button'));
+        callbackButtonArgs.innerHTML = 'Fire MethodArgs';
+        callbackButtonArgs.onclick = function (e) {
+            e.preventDefault();
+            var data = JSON.stringify(['foo']);
+
+            log('JS calling handler "MethodArgs"', data);
+            bridge.callNative('MethodArgs',
+                data,
+                function(response) {
+                    log('JS got response', response);
+                });
+        }
+    });
+</script>
+</body>
+</html>
