@@ -1,93 +1,232 @@
 <!DOCTYPE html>
+<head>
+    <title>Win32 WebView: Call C# Methods From JavaScript</title>
+    <style>
+        @keyframes highlight {
+            0% {
+                background: orange;
+            }
+
+            100% {
+                background: none;
+            }
+        }
+
+        #log > div {
+            animation-name: highlight;
+            animation-duration: 1s;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: .1rem .7rem;
+            background: #ffd800;
+            color: #000;
+            font-weight: 400;
+            /*font-size: 1.3rem;*/
+            text-transform: uppercase;
+            letter-spacing: .075em;
+        }
+    </style>
+</head>
 <body>
-<h1>AddWebAllowedObject Workaround Example</h1>
-<div id='buttons'></div>
-<div id='log'></div>
+<main>
+<article>
+    <header>
+        <h1>Win32 WebView: Call C# Methods from JavaScript</h1>
+        <p>
+            The Win32 WebViewControl does not support <code>ObjectForScripting</code> or
+            <code>AddWebAllowedObject</code>. This sample was designed with the goal of
+            showcasing how communications could be standardized using
+            <code>window.external.notify</code> and the
+            <code>ScriptNotify</code> event.
+        </p>
+    </header>
+    <section>
+        <div>
+            <div>
+                <h3>
+                    Invoke .NET from JavaScript
+                </h3>
+                <p>Clicking each of these buttons will dispatch a message through the JavaScript bridge to retrieve a .NET class containing data.
+                    After each message is returned, a JavaScript callback is executed to bind the result to a HTML table.</p>
+                <br />
+                <div>
+                    <button id="products-get-all">Get All Products</button>
+                    <button id="products-get-pear">Get Product by Name</button>
+                    <button id="products-get-orange">Get Invalid Product</button>
+                </div>
+                <br />
+                <div id="products-data">
+                </div>
+            </div>
+
+            <div>
+                <h3>Log</h3>
+                <button id="log-clear">Clear Log</button>
+                <hr />
+                <div id="log">
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
 <!--
 Can include if you wish, or inject via C#
 I've included it below so I can debug with DevTools
 -->
 <script src="Bridge.js"></script>
-
 <script>
-    var log = function(m, d) {
-        var e = document.getElementById('log'),
-            l = document.createElement('div');
+    // Ensures JavaScript Bridge is loaded.
+    var ConnectWebViewBridge = function(callback) {
+            if (window.JavaScriptBridge) {
+                callback(JavaScriptBridge);
+            } else {
+                // Bridge is not yet loaded, wait for event
+                document.addEventListener(
+                    'JavaScriptBridgeReady',
+                    function() {
+                        callback(JavaScriptBridge);
+                    },
+                    false);
+            }
+        },
+        // Method to create a table from JSON data
+        // You could use whatever UI framework you want
+        createTable = function(data) {
+            // Our model contains elements like Name, Price, Expiry, and Sizes
+            // Extract header values
+            var col = [];
+            for (var i = 0; i < data.length; i++) {
+                for (var key in data[i]) {
+                    if (col.indexOf(key) === -1) {
+                        col.push(key);
+                    }
+                }
+            }
 
-        l.innerHTML = m + ':<br />' + JSON.stringify(d);
-        if (e.children.length) {
-            e.insertBefore(l, e.children[0]);
-        } else {
-            e.appendChild(l);
-        }
-    },
-    ConnectWebViewBridge = function(callback) {
-        if (window.JavaScriptBridge) {
-            callback(JavaScriptBridge);
-        } else {
-            log('Waiting for JavaScriptBridgeReady event');
-            document.addEventListener('JavaScriptBridgeReady',
-                function () {
-                    log('JavaScriptBridgeReady event fired');
-                    callback(JavaScriptBridge);
-                },
-                false);
-        }
+            // Create table
+            var table = document.createElement('table');
+            var tr = table.insertRow(-1);
+
+            // Add header row
+            for (var i = 0; i < col.length; i++) {
+                var th = document.createElement('th');
+                th.innerHTML = col[i];
+                tr.appendChild(th);
+            }
+
+            // Add JSON data
+            for (var i = 0; i < data.length; i++) {
+                tr = table.insertRow(-1);
+                for (var j = 0; j < col.length; j++) {
+                    var cell = tr.insertCell(-1);
+                    cell.innerHTML = data[i][col[j]];
+                }
+            }
+
+            return table;
+        },
+        showData = function(data) {
+            var table = createTable(data),
+                container = document.getElementById('products-data');
+
+            container.innerHTML = "";
+            container.appendChild(table);
+        },
+        // Function to log messages going back and forth to the JavaScript bridge
+        log = function(msg, data) {
+            var l = document.getElementById('log'),
+                e = document.createElement('div');
+
+            e.innerHTML = msg + '<br />';
+            if (data !== undefined) {
+                e.innerHTML += 'Data: <pre><code>' + JSON.stringify(data, null, 2) + '</code></pre>';
+            }
+            e.innerHTML += '<hr />';
+            l.appendChild(e);
+        },
+        logMethodCall = function(method, data) {
+            log('<span class="badge">JavaScript</span> Queuing message for C# method <code>' + method + '</code>', data);
+        };
+
+    window.onerror = function(err) {
+        console.log('window.onerror: ' + err);
+        log('<span class="badge">JavaScript</span><code>window.onerror</code>: ' + err);
     };
 
-    window.onerror = function (err) {
-        console.log('window.onerror: ' + err);
-        log(err);
+    var logClearButton = document.getElementById('log-clear');
+    logClearButton.onclick = function(e) {
+        e.preventDefault();
+        var l = document.getElementById('log');
+        l.innerHTML = '';
     }
 
+    // Callback will execute when JavaScript bridge is ready
     ConnectWebViewBridge(function(bridge) {
-
-
-        var button = document.getElementById('buttons').appendChild(document.createElement('button'));
-
-        button.innerHTML = 'Send message to Native';
-        button.onclick = function (e) {
+        var allProductsButton = document.getElementById('products-get-all');
+        allProductsButton.onclick = function(e) {
             e.preventDefault();
-            var data = 'Hello from JS button';
-            log('JS sending message', data);
-            bridge.send(data,
-                function(responseData) {
-                    log('JS got response', responseData);
+            // The C# method to call
+            const method = 'GetAllProducts';
+            // The data to pass the C# method
+            const data = null;
 
-                });
-        }
+            logMethodCall(method, data);
 
-        document.body.appendChild(document.createElement('br'));
-
-        var callbackButton = document.getElementById('buttons').appendChild(document.createElement('button'));
-        callbackButton.innerHTML = 'Fire MethodNoArgs';
-        callbackButton.onclick = function (e) {
-            e.preventDefault();
-            var data = null;
-            log('JS calling handler "MethodNoArgs"', data);
-            bridge.callNative('MethodNoArgs',
-                data,
-                function (response) {
-                    log('JS got response', response);
-                });
-        }
-
-        document.body.appendChild(document.createElement('br'));
-
-        var callbackButtonArgs = document.getElementById('buttons').appendChild(document.createElement('button'));
-        callbackButtonArgs.innerHTML = 'Fire MethodArgs';
-        callbackButtonArgs.onclick = function (e) {
-            e.preventDefault();
-            var data = JSON.stringify(['foo']);
-
-            log('JS calling handler "MethodArgs"', data);
-            bridge.callNative('MethodArgs',
+            bridge.callNative(
+                method,
                 data,
                 function(response) {
-                    log('JS got response', response);
-                });
-        }
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    showData(response);
+                }
+            );
+        };
+
+        var singleProductButton = document.getElementById('products-get-pear');
+        singleProductButton.onclick = function(e) {
+            e.preventDefault();
+            // The C# method to call
+            const method = 'GetProduct';
+            // The data to pass the C# method
+            const data = ['pear'];
+
+            logMethodCall(method, data);
+
+            bridge.callNative(
+                method,
+                data,
+                function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    // Our "showData" method expects an array, not a single object
+                    showData([response]);
+                }
+            );
+        };
+
+        var invalidProductButton = document.getElementById('products-get-orange');
+        invalidProductButton.onclick = function(e) {
+            e.preventDefault();
+            // The C# method to call
+            const method = 'GetProduct';
+            // The data to pass the C# method
+            const data = ['orange'];
+
+            logMethodCall(method, data);
+
+            bridge.callNative(
+                method,
+                data,
+                function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    // Our "showData" method expects an array, not a single object
+                    showData([response]);
+                }
+            );
+        };
     });
 </script>
+</main>
 </body>
 </html>

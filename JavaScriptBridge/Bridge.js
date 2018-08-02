@@ -18,11 +18,11 @@
             var message = JSON.parse(messageJSON);
             var responseCallback;
 
-            if (message.callback) {
-                responseCallback = responseCallbacks[message.callback];
+            if (message.callbackId) {
+                responseCallback = responseCallbacks[message.callbackId];
                 if (responseCallback) {
-                    responseCallback(message.response);
-                    delete responseCallbacks[message.callback];
+                    responseCallback(message.responseData);
+                    delete responseCallbacks[message.callbackId];
                 }
             }
         });
@@ -35,18 +35,18 @@
     }
 
     function send(data, callback) {
-        sendImpl({ data: data }, callback);
+        sendImpl({ handlerdata: JSON.stringify(data) }, callback);
     }
 
     function callNative(handler, data, callback) {
-        sendImpl({ handler: handler, data: data }, callback);
+        sendImpl({ handler: handler, handlerdata: JSON.stringify(data) }, callback);
     }
 
     function sendImpl(message, callback) {
         if (callback) {
             var cbid = 'cb_' + (msgCnt++) + '_' + new Date().getTime();
             responseCallbacks[cbid] = callback;
-            message['callback'] = cbid;
+            message['callbackId'] = cbid;
         }
 
         sendMessageQueue.push(message);
