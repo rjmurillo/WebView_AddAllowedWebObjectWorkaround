@@ -52,10 +52,18 @@
                     After each message is returned, a JavaScript callback is executed to bind the result to a HTML table.</p>
                 <br />
                 <div>
+                    <p>Using JavaScript Callbacks</p>
                     <button id="products-get-all">Get All Products</button>
                     <button id="products-get-pear">Get Product by Name</button>
                     <button id="products-get-orange">Get Invalid Product</button>
                     <button id="products-get-all-then-specific">Get All Then Specific</button>
+                </div>
+                <div>
+                    <p>Using JavaScript Promises</p>
+                    <button id="p-products-get-all">Get All Products</button>
+                    <button id="p-products-get-pear">Get Product by Name</button>
+                    <button id="p-products-get-orange">Get Invalid Product</button>
+                    <button id="p-products-get-all-then-specific">Get All Then Specific</button>
                 </div>
                 <br />
                 <div id="products-data">
@@ -165,7 +173,7 @@ I've included it below so I can debug with DevTools
 
     // Callback will execute when JavaScript bridge is ready
     ConnectWebViewBridge(function(bridge) {
-        var allProductsButton = document.getElementById('products-get-all');
+        const allProductsButton = document.getElementById('products-get-all');
         allProductsButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
@@ -185,7 +193,7 @@ I've included it below so I can debug with DevTools
             );
         };
 
-        var singleProductButton = document.getElementById('products-get-pear');
+        const singleProductButton = document.getElementById('products-get-pear');
         singleProductButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
@@ -206,7 +214,7 @@ I've included it below so I can debug with DevTools
             );
         };
 
-        var invalidProductButton = document.getElementById('products-get-orange');
+        const invalidProductButton = document.getElementById('products-get-orange');
         invalidProductButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
@@ -227,7 +235,7 @@ I've included it below so I can debug with DevTools
             );
         };
 
-        var getAllThenSpecific = document.getElementById('products-get-all-then-specific');
+        const getAllThenSpecific = document.getElementById('products-get-all-then-specific');
         getAllThenSpecific.onclick = function(e) {
             e.preventDefault();
 
@@ -254,6 +262,86 @@ I've included it below so I can debug with DevTools
                             // Our "showData" method expects an array, not a single object
                             showData([secondResponse]);
                         });
+                });
+        };
+
+        // Shows how to use promises in ES6
+        const pallProductsButton = document.getElementById('p-products-get-all');
+        pallProductsButton.onclick = function (e) {
+            e.preventDefault();
+            // The C# method to call
+            const method = 'GetAllProducts';
+            // The data to pass the C# method
+            const data = null;
+
+            logMethodCall(method, data);
+
+            bridge.callNative(method, data)
+                  .then(function (response) {
+                        log('<span class="badge">JavaScript</span> Received response', response);
+                        showData(response);
+                    });
+        };
+
+        const psingleProductButton = document.getElementById('p-products-get-pear');
+        psingleProductButton.onclick = function (e) {
+            e.preventDefault();
+            // The C# method to call
+            const method = 'GetProduct';
+            // The data to pass the C# method
+            const data = ['pear'];
+
+            logMethodCall(method, data);
+
+            bridge.callNative(method, data)
+                  .then(function (response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    // Our "showData" method expects an array, not a single object
+                    showData([response]);
+                });
+        };
+
+        const pinvalidProductButton = document.getElementById('p-products-get-orange');
+        pinvalidProductButton.onclick = function (e) {
+            e.preventDefault();
+            // The C# method to call
+            const method = 'GetProduct';
+            // The data to pass the C# method
+            const data = ['orange'];
+
+            logMethodCall(method, data);
+
+            bridge.callNative(method, data)
+                  .then(function (response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    // Our "showData" method expects an array, not a single object
+                    showData([response]);
+                });
+        };
+
+        const pGetAllThenSpecific = document.getElementById('p-products-get-all-then-specific');
+        pGetAllThenSpecific.onclick = function(e) {
+            e.preventDefault();
+
+            const method = 'GetAllProducts';
+            const data = null;
+
+            logMethodCall(method, data);
+
+            bridge.callNative(method, data)
+                .then(function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    const method = 'GetProduct';
+                    const data = [response[0].name];
+
+                    logMethodCall(method, data);
+
+                    return bridge.callNative(method, data);
+                })
+                .then(function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    // Our "showData" method expects an array, not a single object
+                    showData([response]);
                 });
         };
     });

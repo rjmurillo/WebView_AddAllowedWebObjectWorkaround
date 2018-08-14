@@ -29,7 +29,7 @@
     }
 
     function fetchQueue() {
-        var messageQueueString = JSON.stringify(sendMessageQueue);
+        const messageQueueString = JSON.stringify(sendMessageQueue);
         sendMessageQueue = [];
         return messageQueueString;
     }
@@ -39,7 +39,19 @@
     }
 
     function callNative(handler, data, callback) {
-        sendImpl({ handler: handler, handlerdata: JSON.stringify(data) }, callback);
+        const func = this.callNative;
+
+        if (callback === undefined) {
+            return new Promise(function(resolve, reject) {
+                func(handler,
+                    data,
+                    function(result) {
+                        resolve(result);
+                    });
+            });
+        }
+
+        return sendImpl({ handler: handler, handlerdata: JSON.stringify(data) }, callback);
     }
 
     function sendImpl(message, callback) {
@@ -50,14 +62,14 @@
         }
 
         sendMessageQueue.push(message);
-        var notifyMessage = "jsbridge://queue_message";
+        const notifyMessage = "jsbridge://queue_message";
 
         if (messagingFrame) {
             messagingFrame.contentWindow.postMessage(notifyMessage, "*");
         } else {
             window.external.notify(notifyMessage);
         }
-    };
+    }
 
     window.JavaScriptBridge = {
         send: send,
@@ -73,7 +85,7 @@
     //messagingFrame.src = "/Bridge.html";
     //document.documentElement.appendChild(messagingFrame);
 
-    var readyEvent = new CustomEvent('JavaScriptBridgeReady');
+    const readyEvent = new CustomEvent("JavaScriptBridgeReady");
     readyEvent.bridge = JavaScriptBridge;
     document.dispatchEvent(readyEvent);
 })();
