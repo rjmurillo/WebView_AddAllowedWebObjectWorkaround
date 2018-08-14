@@ -55,6 +55,7 @@
                     <button id="products-get-all">Get All Products</button>
                     <button id="products-get-pear">Get Product by Name</button>
                     <button id="products-get-orange">Get Invalid Product</button>
+                    <button id="products-get-all-then-specific">Get All Then Specific</button>
                 </div>
                 <br />
                 <div id="products-data">
@@ -224,6 +225,36 @@ I've included it below so I can debug with DevTools
                     showData([response]);
                 }
             );
+        };
+
+        var getAllThenSpecific = document.getElementById('products-get-all-then-specific');
+        getAllThenSpecific.onclick = function(e) {
+            e.preventDefault();
+
+            const method = 'GetAllProducts';
+            const data = null;
+
+            logMethodCall(method, data);
+
+            bridge.callNative(
+                method,
+                data,
+                function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                    const method = 'GetProduct';
+                    const data = [response[0].name];
+
+                    logMethodCall(method, data);
+
+                    bridge.callNative(
+                        method,
+                        data,
+                        function(secondResponse) {
+                            log('<span class="badge">JavaScript</span> Received response', secondResponse);
+                            // Our "showData" method expects an array, not a single object
+                            showData([secondResponse]);
+                        });
+                });
         };
     });
 </script>
