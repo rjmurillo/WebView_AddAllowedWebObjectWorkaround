@@ -123,10 +123,10 @@ namespace JavaScriptBridge
         /// <summary>
         /// Determines if the <paramref name="message"/> is from the JavaScript bridge.
         /// </summary>
-        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="_">A <see cref="IWebView"/> instance.</param>
         /// <param name="message">The contents of <see cref="WebViewControlScriptNotifyEventArgs.Value"/>.</param>
         /// <returns><see langword="true" /> if message originated from JavaScript bridge; otherwise, <see langword="false" />.</returns>
-        public static bool IsJavaScriptBridgeMessage(this IWebView webView, string message)
+        public static bool IsJavaScriptBridgeMessage(this IWebView _, string message)
         {
             if (!string.IsNullOrEmpty(message))
             {

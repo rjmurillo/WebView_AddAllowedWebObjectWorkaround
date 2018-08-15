@@ -1,19 +1,16 @@
-﻿using JavaScriptBridge;
-
-using Microsoft.Toolkit.Win32.UI.Controls.WinForms;
-
+﻿using System;
+using System.Diagnostics;
+using JavaScriptBridge;
+using Microsoft.Toolkit.Win32.UI.Controls;
 using Newtonsoft.Json;
 
-using System;
-using System.Diagnostics;
-
-namespace WebViewAddAllowedWebObjectWorkaround
+namespace WebViewAddAllowedWebObjectWorkaround.Shared
 {
     public class WebViewTraceListener : TraceListener
     {
-        private readonly WebView _webView;
+        private readonly IWebView _webView;
 
-        public WebViewTraceListener(WebView webView)
+        public WebViewTraceListener(IWebView webView)
         {
             _webView = webView ?? throw new ArgumentNullException(nameof(webView));
         }
