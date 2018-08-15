@@ -64,6 +64,7 @@
                     <button id="p-products-get-pear">Get Product by Name</button>
                     <button id="p-products-get-orange">Get Invalid Product</button>
                     <button id="p-products-get-all-then-specific">Get All Then Specific</button>
+                    <button id="p-products-get-all-then-specific-async-await">Get All Then Specific (Async/Await)</button>
                 </div>
                 <br />
                 <div id="products-data">
@@ -343,6 +344,24 @@ I've included it below so I can debug with DevTools
                     // Our "showData" method expects an array, not a single object
                     showData([response]);
                 });
+        };
+
+        const pGetAllThenSpecificAA = document.getElementById('p-products-get-all-then-specific-async-await');
+        pGetAllThenSpecificAA.onclick = async function (e) {
+            e.preventDefault();
+
+            let method = 'GetAllProducts';
+            let data = null;
+
+            logMethodCall(method, data);
+            let allProductsResponse = await bridge.callNative(method, data);
+
+            method = 'GetProduct';
+            data = [allProductsResponse[0].name];
+            logMethodCall(method, data);
+            let productResponse = await bridge.callNative(method, data);
+
+            showData([productResponse]);
         };
     });
 </script>
