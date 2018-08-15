@@ -1,0 +1,22 @@
+﻿<Window
+    x:Class="WebViewAddAllowedWebObjectWorkaround_WPF.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:WPF="clr-namespace:Microsoft.Toolkit.Win32.UI.Controls.WPF;assembly=Microsoft.Toolkit.Win32.UI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:WebViewAddAllowedWebObjectWorkaround_WPF"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="MainWindow"
+    Width="1384"
+    Height="1161"
+    mc:Ignorable="d">
+    <Grid>
+
+        <WPF:WebView
+            x:Name="WebView"
+            IsJavaScriptEnabled="True"
+            IsScriptNotifyAllowed="True"
+            Loaded="WebView_OnLoaded" />
+
+    </Grid>
+</Window>

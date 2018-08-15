@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JavaScriptBridge", "JavaScr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{4E82321F-7005-49FA-968E-8457A7D15651}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebViewAddAllowedWebObjectWorkaround_WPF", "WebViewAddAllowedWebObjectWorkaround_WPF\WebViewAddAllowedWebObjectWorkaround_WPF.csproj", "{993AF33A-D428-410A-B285-9CD75EB2194F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{4E82321F-7005-49FA-968E-8457A7D15651}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E82321F-7005-49FA-968E-8457A7D15651}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E82321F-7005-49FA-968E-8457A7D15651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{993AF33A-D428-410A-B285-9CD75EB2194F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{993AF33A-D428-410A-B285-9CD75EB2194F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{993AF33A-D428-410A-B285-9CD75EB2194F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{993AF33A-D428-410A-B285-9CD75EB2194F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
