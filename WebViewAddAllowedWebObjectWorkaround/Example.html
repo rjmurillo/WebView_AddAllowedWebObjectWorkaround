@@ -57,6 +57,7 @@
                     <button id="products-get-pear">Get Product by Name</button>
                     <button id="products-get-orange">Get Invalid Product</button>
                     <button id="products-get-all-then-specific">Get All Then Specific</button>
+                    <button id="exception">Handle Exception</button>
                 </div>
                 <div>
                     <p>Using JavaScript Promises</p>
@@ -65,6 +66,8 @@
                     <button id="p-products-get-orange">Get Invalid Product</button>
                     <button id="p-products-get-all-then-specific">Get All Then Specific</button>
                     <button id="p-products-get-all-then-specific-async-await">Get All Then Specific (Async/Await)</button>
+                    <button id="p-exception">Handle Exception</button>
+                    <button id="p-exception-async-await">Handle Exception (Async/Await)</button>
                 </div>
                 <br />
                 <div id="products-data">
@@ -94,7 +97,7 @@ I've included it below so I can debug with DevTools
             } else {
                 // Bridge is not yet loaded, wait for event
                 document.addEventListener(
-                    'JavaScriptBridgeReady',
+                    "JavaScriptBridgeReady",
                     function() {
                         callback(JavaScriptBridge);
                     },
@@ -116,12 +119,12 @@ I've included it below so I can debug with DevTools
             }
 
             // Create table
-            var table = document.createElement('table');
+            var table = document.createElement("table");
             var tr = table.insertRow(-1);
 
             // Add header row
             for (var i = 0; i < col.length; i++) {
-                var th = document.createElement('th');
+                var th = document.createElement("th");
                 th.innerHTML = col[i];
                 tr.appendChild(th);
             }
@@ -151,26 +154,26 @@ I've included it below so I can debug with DevTools
 
             e.innerHTML = msg + '<br />';
             if (data !== undefined) {
-                e.innerHTML += 'Data: <pre><code>' + JSON.stringify(data, null, 2) + '</code></pre>';
+                e.innerHTML += `Data: <pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
             }
-            e.innerHTML += '<hr />';
+            e.innerHTML += "<hr />";
             l.appendChild(e);
         },
         logMethodCall = function(method, data) {
-            log('<span class="badge">JavaScript</span> Queuing message for C# method <code>' + method + '</code>', data);
+            log(`<span class="badge">JavaScript</span> Queuing message for C# method <code>${method}</code>`, data);
         };
 
     window.onerror = function(err) {
-        console.log('window.onerror: ' + err);
-        log('<span class="badge">JavaScript</span><code>window.onerror</code>: ' + err);
+        console.log(`window.onerror: ${err}`);
+        log(`<span class="badge">JavaScript</span><code>window.onerror</code>: ${err}`);
     };
 
     var logClearButton = document.getElementById('log-clear');
     logClearButton.onclick = function(e) {
         e.preventDefault();
-        var l = document.getElementById('log');
+        const l = document.getElementById('log');
         l.innerHTML = '';
-    }
+    };
 
     // Callback will execute when JavaScript bridge is ready
     ConnectWebViewBridge(function(bridge) {
@@ -179,14 +182,11 @@ I've included it below so I can debug with DevTools
             e.preventDefault();
             // The C# method to call
             const method = 'GetAllProducts';
-            // The data to pass the C# method
-            const data = null;
 
-            logMethodCall(method, data);
+            logMethodCall(method);
 
             bridge.callNative(
                 method,
-                data,
                 function(response) {
                     log('<span class="badge">JavaScript</span> Received response', response);
                     showData(response);
@@ -241,13 +241,11 @@ I've included it below so I can debug with DevTools
             e.preventDefault();
 
             const method = 'GetAllProducts';
-            const data = null;
 
-            logMethodCall(method, data);
+            logMethodCall(method);
 
             bridge.callNative(
                 method,
-                data,
                 function(response) {
                     log('<span class="badge">JavaScript</span> Received response', response);
                     const method = 'GetProduct';
@@ -266,18 +264,34 @@ I've included it below so I can debug with DevTools
                 });
         };
 
+        const exception = document.getElementById('exception');
+        exception.onclick = function(e) {
+            e.preventDefault();
+
+            const method = 'DoesNotExist';
+
+            logMethodCall(method);
+
+            bridge.callNative(
+                method,
+                function(response) {
+                    log('<span class="badge">JavaScript</span> Received response', response);
+                },
+                function(err) {
+                    log('<span class="badge">JavaScript</span> Error', err);
+                });
+        };
+
         // Shows how to use promises in ES6
         const pallProductsButton = document.getElementById('p-products-get-all');
         pallProductsButton.onclick = function (e) {
             e.preventDefault();
             // The C# method to call
             const method = 'GetAllProducts';
-            // The data to pass the C# method
-            const data = null;
 
-            logMethodCall(method, data);
+            logMethodCall(method);
 
-            bridge.callNative(method, data)
+            bridge.callNative(method)
                   .then(function (response) {
                         log('<span class="badge">JavaScript</span> Received response', response);
                         showData(response);
@@ -324,15 +338,14 @@ I've included it below so I can debug with DevTools
         pGetAllThenSpecific.onclick = function(e) {
             e.preventDefault();
 
-            const method = 'GetAllProducts';
-            const data = null;
+            let method = 'GetAllProducts';
 
-            logMethodCall(method, data);
+            logMethodCall(method);
 
-            bridge.callNative(method, data)
+            bridge.callNative(method)
                 .then(function(response) {
                     log('<span class="badge">JavaScript</span> Received response', response);
-                    const method = 'GetProduct';
+                    method = 'GetProduct';
                     const data = [response[0].name];
 
                     logMethodCall(method, data);
@@ -346,22 +359,56 @@ I've included it below so I can debug with DevTools
                 });
         };
 
+        // How to do the above scenario, but using JavaScript async/await pattern
         const pGetAllThenSpecificAA = document.getElementById('p-products-get-all-then-specific-async-await');
         pGetAllThenSpecificAA.onclick = async function (e) {
             e.preventDefault();
 
             let method = 'GetAllProducts';
-            let data = null;
 
-            logMethodCall(method, data);
-            let allProductsResponse = await bridge.callNative(method, data);
+            logMethodCall(method);
+            const allProductsResponse = await bridge.callNative(method);
 
             method = 'GetProduct';
-            data = [allProductsResponse[0].name];
+            const data = [allProductsResponse[0].name];
             logMethodCall(method, data);
-            let productResponse = await bridge.callNative(method, data);
+            const productResponse = await bridge.callNative(method, data);
 
             showData([productResponse]);
+        };
+
+        const pexception = document.getElementById('p-exception');
+        pexception.onclick = function (e) {
+            e.preventDefault();
+
+            const method = 'DoesNotExist';
+
+            logMethodCall(method);
+
+            bridge.callNative(method)
+                  .then(function(response) {
+                        log('<span class="badge">JavaScript</span> Received response', response);
+                })
+                .catch(function (err) {
+                    log('<span class="badge">JavaScript</span> Error', err);
+                });
+        };
+
+        // How to do above scenario, but using JavaScript async/await pattern
+        const pexceptionAA = document.getElementById('p-exception-async-await');
+        pexceptionAA.onclick = async function (e) {
+            e.preventDefault();
+
+            const method = 'DoesNotExist';
+
+            logMethodCall(method);
+
+            try {
+                let response = await bridge.callNative(method);
+                log('<span class="badge">JavaScript</span> Received response', response);
+            } catch (err) {
+                log('<span class="badge">JavaScript</span> Error', err);
+            }
         };
     });
 </script>

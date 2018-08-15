@@ -77,12 +77,38 @@ namespace JavaScriptBridge
 
                         foreach (var message in messages)
                         {
-                            messageHandler(message);
-
-                            // If there is a callback, invoke that
-                            if (!string.IsNullOrEmpty(message.CallbackId))
+                            try
                             {
-                                DispatchMessage(webView, message);
+                                messageHandler(message);
+
+                                // Null the data out to avoid dealing with serialization issues in DispatchMessage
+                                message.HandlerData = null;
+
+                                // Assume that if we got this far that the call was successful
+                                // If there is a callback, invoke that
+                                if (!string.IsNullOrEmpty(message.CallbackId))
+                                {
+                                    webView.DispatchMessage(message);
+                                }
+                            }
+                            catch (Exception exception)
+                            {
+                                Trace.WriteLine($"Error while processing message: [{exception.GetType()}] {exception.Message}", Constants.TraceName);
+
+                                // Encountered an excpetion while processing the message
+                                // Mask any potential disclosure issues by wrapping the exception as our own
+                                var e = new JavaScriptBridgeException(exception.Message);
+                                e.Source = Constants.TraceName;
+                                message.ErrorData = e;
+
+                                // Null the data out to avoid dealing with serialization issues in DispatchMessage
+                                message.HandlerData = null;
+
+
+                                if (!string.IsNullOrEmpty(message.CallbackId))
+                                {
+                                    webView.DispatchMessage(message);
+                                }
                             }
                         }
                     }

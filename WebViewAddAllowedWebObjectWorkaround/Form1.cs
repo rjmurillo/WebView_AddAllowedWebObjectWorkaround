@@ -121,9 +121,12 @@ namespace WebViewAddAllowedWebObjectWorkaround
                     var args = JsonConvert.DeserializeObject<List<object>>(javaScriptBridgeMessage.HandlerData);
                     javaScriptBridgeMessage.ResponseData = _productRepository.GetProductByName(args[0].ToString());
                 }
-
-                // Null the data out to avoid dealing with serialization issues in DispatchMessage
-                javaScriptBridgeMessage.HandlerData = null;
+                else
+                {
+                    // An example of how we can return exceptions back to JavaScript through the bridge
+                    // It is important to strip any information from an exception to avoid disclosure to attacker
+                    throw new NotSupportedException($"{javaScriptBridgeMessage.Handler} not supported.");
+                }
             }
         }
     }

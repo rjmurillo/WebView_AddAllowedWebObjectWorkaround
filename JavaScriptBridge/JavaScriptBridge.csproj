@@ -42,6 +42,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
+    <Compile Include="JavaScriptBridgeException.cs" />
     <Compile Include="JavaScriptBridgeMessage.cs" />
     <Compile Include="JavaScriptBridgeMessageExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

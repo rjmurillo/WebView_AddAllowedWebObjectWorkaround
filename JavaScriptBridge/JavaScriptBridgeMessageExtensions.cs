@@ -15,7 +15,8 @@ namespace JavaScriptBridge
         {
             NullValueHandling = NullValueHandling.Ignore,
             ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            StringEscapeHandling = StringEscapeHandling.EscapeHtml
+            StringEscapeHandling = StringEscapeHandling.EscapeHtml,
+            Formatting = Formatting.None
         };
 
         /// <summary>
