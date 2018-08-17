@@ -53,9 +53,9 @@
     }
 
     function fetchQueue() {
-        const messageQueueString = JSON.stringify(sendMessageQueue);
+        const queue = sendMessageQueue;
         sendMessageQueue = [];
-        return messageQueueString;
+        return queue;
     }
 
     function send(data, onSuccess, onFailure) {
@@ -87,7 +87,7 @@
         }
 
         return sendImpl(
-            { handler: handler, handlerdata: JSON.stringify(data) },
+            { handler: handler, handlerdata: data },
             onSuccess,
             onFailure);
     }

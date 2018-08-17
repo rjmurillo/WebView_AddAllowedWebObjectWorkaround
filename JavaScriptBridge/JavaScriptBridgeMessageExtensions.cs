@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace JavaScriptBridge
+namespace Microsoft.Toolkit.Win32.UI.Controls.WebViewExtensions
 {
     /// <summary>
     /// Contains extension methods for <see cref="JavaScriptBridgeMessage"/>.

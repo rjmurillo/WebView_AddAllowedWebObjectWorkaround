@@ -141,18 +141,18 @@ I've included it below so I can debug with DevTools
             return table;
         },
         showData = function(data) {
-            var table = createTable(data),
-                container = document.getElementById('products-data');
+            const table = createTable(data);
+            const container = document.getElementById('products-data');
 
             container.innerHTML = "";
             container.appendChild(table);
         },
         // Function to log messages going back and forth to the JavaScript bridge
         log = function(msg, data) {
-            var l = document.getElementById('log'),
-                e = document.createElement('div');
+            const l = document.getElementById("log");
+            const e = document.createElement("div");
 
-            e.innerHTML = msg + '<br />';
+            e.innerHTML = `${msg}<br />`;
             if (data !== undefined) {
                 e.innerHTML += `Data: <pre><code>${JSON.stringify(data, null, 2)}</code></pre>`;
             }
@@ -164,24 +164,24 @@ I've included it below so I can debug with DevTools
         };
 
     window.onerror = function(err) {
-        console.log(`window.onerror: ${err}`);
+        console.error(`window.onerror: ${err}`);
         log(`<span class="badge">JavaScript</span><code>window.onerror</code>: ${err}`);
     };
 
-    var logClearButton = document.getElementById('log-clear');
+    var logClearButton = document.getElementById("log-clear");
     logClearButton.onclick = function(e) {
         e.preventDefault();
-        const l = document.getElementById('log');
+        const l = document.getElementById("log");
         l.innerHTML = '';
     };
 
     // Callback will execute when JavaScript bridge is ready
     ConnectWebViewBridge(function(bridge) {
-        const allProductsButton = document.getElementById('products-get-all');
+        const allProductsButton = document.getElementById("products-get-all");
         allProductsButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
-            const method = 'GetAllProducts';
+            const method = "GetAllProducts";
 
             logMethodCall(method);
 
@@ -198,9 +198,9 @@ I've included it below so I can debug with DevTools
         singleProductButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
-            const method = 'GetProduct';
+            const method = "GetProduct";
             // The data to pass the C# method
-            const data = ['pear'];
+            const data = {"name": "pear"};
 
             logMethodCall(method, data);
 
@@ -219,9 +219,9 @@ I've included it below so I can debug with DevTools
         invalidProductButton.onclick = function(e) {
             e.preventDefault();
             // The C# method to call
-            const method = 'GetProduct';
+            const method = "GetProduct";
             // The data to pass the C# method
-            const data = ['orange'];
+            const data = {"name": "orange"};
 
             logMethodCall(method, data);
 
@@ -249,7 +249,7 @@ I've included it below so I can debug with DevTools
                 function(response) {
                     log('<span class="badge">JavaScript</span> Received response', response);
                     const method = 'GetProduct';
-                    const data = [response[0].name];
+                    const data = { "name": response[0].name };
 
                     logMethodCall(method, data);
 
@@ -268,7 +268,7 @@ I've included it below so I can debug with DevTools
         exception.onclick = function(e) {
             e.preventDefault();
 
-            const method = 'DoesNotExist';
+            const method = "DoesNotExist";
 
             logMethodCall(method);
 
@@ -287,7 +287,7 @@ I've included it below so I can debug with DevTools
         pallProductsButton.onclick = function (e) {
             e.preventDefault();
             // The C# method to call
-            const method = 'GetAllProducts';
+            const method = "GetAllProducts";
 
             logMethodCall(method);
 
@@ -304,7 +304,7 @@ I've included it below so I can debug with DevTools
             // The C# method to call
             const method = 'GetProduct';
             // The data to pass the C# method
-            const data = ['pear'];
+            const data = { "name": 'pear' };
 
             logMethodCall(method, data);
 
@@ -322,7 +322,7 @@ I've included it below so I can debug with DevTools
             // The C# method to call
             const method = 'GetProduct';
             // The data to pass the C# method
-            const data = ['orange'];
+            const data = { "name": 'orange' };
 
             logMethodCall(method, data);
 
@@ -370,7 +370,7 @@ I've included it below so I can debug with DevTools
             const allProductsResponse = await bridge.callNative(method);
 
             method = 'GetProduct';
-            const data = [allProductsResponse[0].name];
+            const data = { "name": allProductsResponse[0].name };
             logMethodCall(method, data);
             const productResponse = await bridge.callNative(method, data);
 

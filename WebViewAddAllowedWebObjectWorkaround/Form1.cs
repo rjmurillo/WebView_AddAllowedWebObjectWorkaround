@@ -1,32 +1,46 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Windows.Forms;
-using JavaScriptBridge;
 using Microsoft.Toolkit.Win32.UI.Controls;
+using Microsoft.Toolkit.Win32.UI.Controls.WebViewExtensions;
 using WebViewAddAllowedWebObjectWorkaround.Shared;
 
 namespace WebViewAddAllowedWebObjectWorkaround
 {
     public partial class Form1 : Form
     {
+        private readonly JavaScriptBridge _javaScriptBridge;
+        private readonly ProductRepository _productRepository;
+
         public Form1()
         {
             InitializeComponent();
+
+            // Initialize the product repository
+            _productRepository = new ProductRepository();
+
+            // Initialize the JavaScriptBridge
+            _javaScriptBridge = JavaScriptBridge.CreateAndStart(webView1, Constants.PermittedOrigin);
+            _javaScriptBridge.AddScriptingHandler("GetAllProducts", @params => _productRepository.GetProducts());
+            _javaScriptBridge.AddScriptingHandler("GetProduct", @params =>
+            {
+                // Since these are coming from JavaScript, take extra care to validate the parameters
+                if (@params != null && @params.Count == 1 && @params.ContainsKey("name"))
+                {
+                    var name = @params["name"]?.ToString();
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        return _productRepository.GetProductByName(name);
+                    }
+                }
+
+                throw new ArgumentException("Unexpected parameters");
+            });
 
             webView1.DOMContentLoaded += (o, e) => Text = webView1.DocumentTitle;
 
             // This is a custom text writer trace listener to send diagnostic data to the webview log
             Trace.Listeners.Add(new WebViewTraceListener(webView1));
-
-            // Ensure the following properties are set. They can be set programatically, or through the designer
-            webView1.IsScriptNotifyAllowed = true;
-            webView1.IsJavaScriptEnabled = true;
-
-            // Ensure the JavaScript bridge is loaded. It can be loaded:
-            //  - Explicitly by the remote resource by including it in the markup from a HTTP server, or
-            //  - Explicitly through C# by handling the NavigationCompleted event.
-            //
-            // NOTE: If the JavaScript bridge is already loaded, it will not be loaded again.
-            webView1.NavigationCompleted += WebViewEventHandlers.OnWebViewNavigationCompleted;
 
             // When the page loads push the product data to the page and bind with JavaScript showData function
             webView1.NavigationCompleted += (o, e) =>
