@@ -6,7 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace JavaScriptBridge
 {
@@ -15,6 +17,152 @@ namespace JavaScriptBridge
     /// </summary>
     public static class WebViewExtensions
     {
+        /// <summary>
+        /// Executes the given JavaScript function within the "window" scope. If the JavaScript function returns a value, it is returned as JSON.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>If the function returns a value, JSON representation of that value.</returns>
+        /// <seealso cref="InvokeScriptFunctionAsync(IWebView,string,string,object[])"/>
+        public static Task<string> InvokeScriptFunctionAsync(this IWebView webView, string function, params object[] args) => InvokeScriptFunctionAsync(webView, "window", function, args);
+
+        /// <summary>
+        /// Executes the given JavaScript function in the specified module with arguments. If the JavaScript function returns a value, it is returned as JSON.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="module">The JavaScript module (e.g. window).</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>If the function returns a value, JSON representation of that value.</returns>
+        public static Task<string> InvokeScriptFunctionAsync(this IWebView webView, string module, string function, params object[] args)
+        {
+            var builder = new StringBuilder();
+            builder.AppendFormat("if ({0} && {0}.{1}) {{\r\n", module, function);
+            builder.AppendFormat("  (function() {{ return JSON.stringify({0}.{1}(", module, function);
+
+            args = args ?? Array.Empty<object>();
+
+            var builder2 = new StringBuilder();
+            var i = 0;
+            while (true)
+            {
+                if (i >= args.Length)
+                {
+                    builder.Append(builder2);
+                    builder.Append("));}())");
+                    builder.Append("}");
+
+                    break;
+                }
+
+                if (i > 0)
+                {
+                    builder.Append(", ");
+                }
+
+                builder2.Append(JsonConvert.SerializeObject(args[i]));
+                i++;
+            }
+
+            return EvalAsync(webView, builder.ToString());
+        }
+
+        /// <summary>
+        /// Executes the given JavaScript function within the "window" scope.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        public static Task<Dictionary<string, object>> InvokeScriptFunctionWithDicionaryResponseAsync(
+            this IWebView webView,
+            string function,
+            params object[] args) => InvokeScriptFunctionWithDicionaryResponseAsync(webView, "window", function, args);
+
+        /// <summary>
+        /// Executes the given JavaScript function within the specified scope.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="module">The JavaScript module (e.g. window).</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        public static async Task<Dictionary<string, object>> InvokeScriptFunctionWithDicionaryResponseAsync(
+            this IWebView webView,
+            string module,
+            string function,
+            params object[] args)
+        {
+            var result = await InvokeScriptFunctionAsync(webView, module, function, args);
+            return !string.IsNullOrEmpty(result)
+                ? JsonConvert.DeserializeObject<Dictionary<string, object>>(result)
+                : new Dictionary<string, object>(0);
+        }
+
+        /// <summary>
+        /// Executes the given JavaScript function within the "window" scope. If the JavaScript function returns a value, it is returned as <see cref="JToken"/>.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>A <see cref="JToken"/>.</returns>
+        public static Task<JToken> InvokeJavaScriptFunctionWithJTokenResponse(
+            this IWebView webView,
+            string function,
+            params object[] args) =>
+            InvokeJavaScriptFunctionWithJTokenResponse(webView, "window", function, args);
+
+        /// <summary>
+        /// Executes the given JavaScript function within the specified scope. If the JavaScript function returns a value, it is returned as <see cref="JToken"/>.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="module">The JavaScript module (e.g. window).</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>A <see cref="JToken"/>.</returns>
+        public static async Task<JToken> InvokeJavaScriptFunctionWithJTokenResponse(
+            IWebView webView,
+            string module,
+            string function,
+            params object[] args)
+        {
+            var result = await InvokeScriptFunctionAsync(webView, module, function, args);
+            return JsonConvert.DeserializeObject<JToken>(result);
+        }
+
+        /// <summary>
+        /// Executes the given JavaScript function within the "window" scope. If the JavaScript function returns a value, it is returned as an instance of <typeparam name="T" />.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>An instance of <typeparam name="T" />.</returns>
+        public static Task<T> InvokeScriptFunctionAsync<T>(
+            IWebView webView,
+            string function,
+            params object[] args) =>
+            InvokeScriptFunctionAsync<T>(webView, "window", function, args);
+
+        /// <summary>
+        /// Executes the given JavaScript function within the specified module. If the JavaScript function returns a value, it is returned as an instance of <typeparam name="T" />.
+        /// </summary>
+        /// <param name="webView">A <see cref="IWebView"/> instance.</param>
+        /// <param name="module">The JavaScript module (e.g. window).</param>
+        /// <param name="function">The name of the JavaScript function in the module.</param>
+        /// <param name="args">The arguments to pass to the function.</param>
+        /// <returns>An instance of <typeparam name="T" />.</returns>
+        public static async Task<T> InvokeScriptFunctionAsync<T>(
+            IWebView webView,
+            string module,
+            string function,
+            params object[] args)
+        {
+            var result = await InvokeScriptFunctionAsync(webView, module, function, args);
+
+            return !string.IsNullOrEmpty(result)
+                ? JsonConvert.DeserializeObject<T>(result)
+                : default(T);
+        }
+
         /// <summary>
         /// Dispatch a <see cref="JavaScriptBridgeMessage"/>.
         /// </summary>

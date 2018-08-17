@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
+using JavaScriptBridge;
+using Microsoft.Toolkit.Win32.UI.Controls;
 using WebViewAddAllowedWebObjectWorkaround.Shared;
 
 namespace WebViewAddAllowedWebObjectWorkaround_WPF
@@ -28,6 +30,17 @@ namespace WebViewAddAllowedWebObjectWorkaround_WPF
             //
             // NOTE: If the JavaScript bridge is already loaded, it will not be loaded again.
             WebView.NavigationCompleted += WebViewEventHandlers.OnWebViewNavigationCompleted;
+
+            // When the page loads push the product data to the page and bind with JavaScript showData function
+            WebView.NavigationCompleted += (o, e) =>
+            {
+                if (o is IWebView wv)
+                {
+                    // Get the products and push to JavaScript function "showData"
+                    var products = new ProductRepository().GetProducts();
+                    wv.InvokeScriptFunctionAsync("showData", products);
+                }
+            };
         }
 
         private void WebView_OnLoaded(object sender, RoutedEventArgs e)
