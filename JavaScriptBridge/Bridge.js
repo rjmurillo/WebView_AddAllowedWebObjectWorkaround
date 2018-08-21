@@ -15,7 +15,7 @@
 
     function dispatchNativeMessage(messageJSON) {
         setTimeout(function _timeout() {
-            const message = JSON.parse(messageJSON);
+            const message = JSON.parse(jsonEscape(messageJSON));
             var responseCallback, errorCallback;
 
             // Check if some type of callback was specified
@@ -115,6 +115,13 @@
         } else {
             window.external.notify(notifyMessage);
         }
+    }
+
+    function jsonEscape(input) {
+        return input
+            .replace(/\n/g, "\\\\n")
+            .replace(/\r/g, "\\\\r")
+            .replace(/\t/g, "\\\\t");
     }
 
     window.JavaScriptBridge = {

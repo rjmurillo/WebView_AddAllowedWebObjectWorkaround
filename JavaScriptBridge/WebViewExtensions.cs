@@ -28,6 +28,17 @@ namespace Microsoft.Toolkit.Win32.UI.Controls.WebViewExtensions
                     $"Calling {Constants.BridgeJavaScript} JavaScriptBridge.handleNativeMessage",
                     Constants.TraceName);
                 Trace.WriteLine(javaScriptBridgeMessage, Constants.TraceName);
+
+                // Need to sanitize message sent to bridge
+                
+                // Escape any single quotes, since that's what we're using
+                json = json.Replace("'", "\\'");
+
+                // Escape any CL/LF
+                json = json.Replace(Environment.NewLine, "\\\\n");
+
+                json = json.Replace("\n", "\\\\n");
+
                 var command = $"JavaScriptBridge.handleNativeMessage('{json}');";
                 // in WPF ensure UI access
                 webView.TryEvalAsync(command);
