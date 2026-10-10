@@ -100,7 +100,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Toolkit.Win32.UI.Controls">
-      <Version>4.0.1</Version>
+      <Version>4.0.3</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
