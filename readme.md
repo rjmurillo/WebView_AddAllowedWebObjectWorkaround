@@ -57,15 +57,15 @@ Clone this repository or download the source code. You will need the contents of
 - In the copied **JavaScriptBridge** project, replace the **Microsoft.Toolkit.Win32.UI.Controls** reference with the same WebView package your app uses. Update **Newtonsoft.Json** to 13.0.1 or later.
 - From your WinForms or WPF project, use **Add reference** to add the **JavaScriptBridge** project.
 
+The **JavaScriptBridge** project copies **Bridge.js** to the build output. The bridge reads the file by the relative path `Bridge.js`, so the app's working directory must be the output folder. That is the default when you start the app from Visual Studio or from its own folder.
+
 ### Add a WebView
 
 Add a `WebView` control to your window or form. The WPF control is `Microsoft.Toolkit.Wpf.UI.Controls.WebView`, and the WinForms control is `Microsoft.Toolkit.Forms.UI.Controls.WebView`.
 
 #### Basic Configuration For WPF
 
-For WPF we assume a WebView has been added with the name *WebView*.
-
-**MainWindow.xaml**
+For WPF we assume a WebView has been added with the name *WebView*. Add the control in **MainWindow.xaml** like this:
 
 ```xml
 <Window
@@ -946,7 +946,10 @@ webView.CoreWebView2.AddHostObjectToScript("greeter", new Greeter());
 ```
 
 ```javascript
-const text = await chrome.webview.hostObjects.greeter.Hello("World");
+async function greet() {
+    const text = await chrome.webview.hostObjects.greeter.Hello("World");
+    console.log(text); // "Hello, World!"
+}
 ```
 
 Read more on Microsoft Learn:
