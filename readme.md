@@ -18,7 +18,7 @@ This sample targets a legacy control. Use it to maintain an existing app, not to
 The bridge has two halves: [Bridge.js](JavaScriptBridge/Bridge.js) runs in the page, and [JavaScriptBridge.cs](JavaScriptBridge/JavaScriptBridge.cs) runs in your app.
 
 1. `JavaScriptBridge.CreateAndStart` turns on JavaScript and `ScriptNotify` for the WebView. It also records the URIs that may talk to the bridge.
-2. When the page raises `DOMContentLoaded` from an allowed URI, the bridge injects **Bridge.js** if the page does not already have it. **Bridge.js** creates `window.JavaScriptBridge` and fires a `JavaScriptBridgeReady` event.
+2. When the page raises `DOMContentLoaded` from an allowed URI, the bridge injects `Bridge.js` if the page does not already have it. `Bridge.js` creates `window.JavaScriptBridge` and fires a `JavaScriptBridgeReady` event.
 3. Your page calls `JavaScriptBridge.callNative(handlerId, data)`. The call adds a `{ handler, handlerdata, callbackId }` message to a queue. Then it calls `window.external.notify("jsbridge://queue_message")`.
 4. The `ScriptNotify` handler drops any event whose URI is not in `AllowedScriptNotifyUris`, or whose value is not a bridge message. Otherwise, it calls `JavaScriptBridge.fetchQueue()` through `InvokeScriptAsync` and gets every queued message.
 5. For each message, the bridge runs the C# delegate you registered with `AddScriptingHandler`. If the delegate throws, or no handler has that name, the reply carries an error object instead. Its `message` is the exception text.
@@ -191,7 +191,7 @@ The debugger for this control is [Microsoft Edge DevTools Preview](https://www.m
 1. Under **Local**, find the **Debug Target** titled **JavaScript Bridge: Getting Started**. Its URI is `ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html`.
 1. Select the target. A new window opens with the debugger attached to your page.
 1. Select the **Console** tab.
-1. Type `document.URL` and press **Enter**. The console shows `"ms-local-stream://Microsoft.Win32WebViewHost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html"`.
+1. Type `document.URL` and press **Enter**. The console shows `"ms-local-stream://Microsoft.Win32WebViewHost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html"`. The host casing differs from the samples, which use lowercase. On current .NET, `System.Uri` comparison ignores host case, so both forms match. If the bridge does not load, pass the exact `document.URL` value to `CreateAndStart`.
 1. Copy the value, then close the debugger and your app.
 
 ### Start the bridge
@@ -353,7 +353,7 @@ This code registers a handler named `HelloWorld`. The lambda takes the named par
 
 To call `HelloWorld`, the page calls `callNative` on the bridge. In this example, the **Hello, World!** button calls it.
 
-`callNative` takes a handler ID, optional data for the handler as named arguments, an optional success callback, and an optional error callback. You can call it three ways: with callbacks, with a promise, or with `async` and `await`. Pick the style that matches your code. In each example below, replace the `ConnectWebViewBridge` call in `Content.html`.
+`callNative` takes a handler ID, optional data for the handler as named arguments, an optional success callback, and an optional error callback. You can call it three ways: with callbacks, with a promise, or with `async` and `await`. Pick the style that matches your code. In each example below, replace the `ConnectWebViewBridge(function (bridge) { ... });` call at the end of the `script` block in `Content.html`. Keep the helper definition above it.
 
 #### Use a callback
 
@@ -882,7 +882,7 @@ Run your app and select **Hello, World!**. The page shows the serialized `Addres
 
 The bridge writes trace messages with the category `JavaScript Bridge`. When you debug in Visual Studio, they appear in the **Output** window.
 
-- **The console never shows `JavaScript bridge is ready!`.** Check that the URI you passed to `CreateAndStart` matches `document.URL`. The bridge injects `Bridge.js` only for allowed URIs. Also check that `Bridge.js` is in the working directory of your app. The bridge loads the file without awaiting the result, so a missing file does not show an error in your app.
+- **The console never shows `JavaScript bridge is ready!`.** Check that the URI you passed to `CreateAndStart` matches `document.URL`. The bridge injects `Bridge.js` only for allowed URIs. Also check that `Bridge.js` is in the working directory of your app. The bridge loads the file without awaiting the result, so a missing file does not show an error in your app. To spot this case, look for the `Could not detect JavaScriptBridge. Injecting script` trace followed by a `FileNotFoundException` from the debugger in the Output window.
 - **The Output window shows `ScriptNotify received from unknown origin`.** The page URI is not in the allowed list. Pass the exact URI to `CreateAndStart`.
 - **The error message is `Handler '<name>' not supported.`** No handler with that name is registered. Check the name you passed to `AddScriptingHandler`. Names are not case sensitive.
 
