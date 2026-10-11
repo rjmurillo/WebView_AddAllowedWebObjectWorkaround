@@ -6,10 +6,10 @@ The Win32 [WebViewControl](https://learn.microsoft.com/uwp/api/windows.web.ui.in
 
 This sample targets a legacy control. Use it to maintain an existing app, not to start a new one.
 
-- **The control is deprecated.** The Windows [Deprecated features](https://learn.microsoft.com/windows/whats-new/deprecated-features) page (checked 2026-10-11) lists Legacy Web View, announced September 2025: "These components, built on the EdgeHTML engine, are no longer in active development and are being phased out." The same entry says they "are expected to eventually stop receiving nonsecurity and security updates and will be removed from future versions of Windows."
+- **The control is deprecated.** The Windows [Deprecated features](https://learn.microsoft.com/windows/whats-new/deprecated-features) page (checked 2026-10-11) lists Legacy Web View, announced September 2025: "These components, built on the EdgeHTML engine, are no longer in active development and are being phased out." The same entry says they are "expected to eventually stop receiving nonsecurity and security updates and will be removed from future versions of Windows."
 - **The original package is deprecated.** NuGet marks `Microsoft.Toolkit.Win32.UI.Controls` 5.0.0 as deprecated (Legacy, CriticalBugs) with this message: "This package is now obsolete and contains no DLLs. Please use Microsoft.Toolkit.Wpf.UI.Controls.WebView or Microsoft.Toolkit.Forms.UI.Controls.WebView packages instead."
 - **The replacement packages are deprecated too.** [Microsoft.Toolkit.Wpf.UI.Controls.WebView](https://www.nuget.org/packages/Microsoft.Toolkit.Wpf.UI.Controls.WebView) and [Microsoft.Toolkit.Forms.UI.Controls.WebView](https://www.nuget.org/packages/Microsoft.Toolkit.Forms.UI.Controls.WebView) 6.1.2 are the last versions. NuGet marks both as Legacy and names `Microsoft.Web.WebView2` as the alternate package: "The Toolkit Edge-HTML based WebView control has been replaced with the new Microsoft Edge (Chromium) based WebView2." Their `WebView` classes carry `[Obsolete]`, so the compiler reports warning CS0618 when you use them. `NavigateToLocal`, used below, also reports CS0618 and points to `NavigateToLocalStreamUri`.
-- **The projects in this repository** still reference `Microsoft.Toolkit.Win32.UI.Controls` 4.0.1. The **JavaScriptBridge** source also compiles unchanged against `Microsoft.Toolkit.Wpf.UI.Controls.WebView` 6.1.2.
+- **The projects in this repository** still reference `Microsoft.Toolkit.Win32.UI.Controls` 4.0.1. The **JavaScriptBridge** source also compiles unchanged against `Microsoft.Toolkit.Wpf.UI.Controls.WebView` 6.1.2 and `Microsoft.Toolkit.Forms.UI.Controls.WebView` 6.1.2.
 
 ## How the bridge works
 
@@ -29,11 +29,11 @@ _javaScriptBridge = JavaScriptBridge.CreateAndStart(webView1, new Uri("ms-local-
 _javaScriptBridge.AddScriptingHandler("HelloWorld", @params => $"Hello, {@params["name"]}!");
 ```
 
-In the page, after the bridge raises `JavaScriptBridgeReady`:
+In the page, using the `ConnectWebViewBridge` helper defined under [Add Local Content](#add-local-content):
 
 ```javascript
-document.addEventListener("JavaScriptBridgeReady", async function () {
-    const response = await JavaScriptBridge.callNative("HelloWorld", { name: "World" });
+ConnectWebViewBridge(async function (bridge) {
+    const response = await bridge.callNative("HelloWorld", { name: "World" });
     console.log(response); // "Hello, World!"
 });
 ```
@@ -176,7 +176,7 @@ In the previous step we use the method `NavigateToLocal(String)` method to navig
 
 The content includes basic HTML elements, and the `script` block used to wait for the JavaScript bridge to initialize. You can place it wherever you would like, but it is placed in this sample at the end of the `body` tag so as not to block any other scripts, and the DOM has the ability to get ready before parsing and invoking our script.
 
-If you run the sample at this point, there should be an empty window with a title of *JavaScript Bridge Getting Started*.
+If you run the sample at this point, there should be an empty window with a title of *JavaScript Bridge: Getting Started*.
 
 ### Debugging your WebView
 
@@ -185,7 +185,7 @@ During the course of development you may wish to debug the content in the WebVie
 - Install [Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ) from the Microsoft Store.
 - Launch your application.
 - Launch **Microsoft Edge DevTools Preview**
-- Look for a **Local** **Debug Target** with the title **JavaScript Bridge Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
+- Look for a **Local** **Debug Target** with the title **JavaScript Bridge: Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
 - Click that item to attach the debugger. Once attached a new window will pop up to debug your local content within the WebView.
 
 Once the debugger is attached, we will need the URI to configure the JavaScript bridge. You can easily get the URI of the document by following these steps
@@ -197,7 +197,7 @@ Once the debugger is attached, we will need the URI to configure the JavaScript 
 
 ### Inject the JavaScript bridge into your content
 
-Injecting the JavaScript bridge into your content requires two items: an instance of `IWebView`, which we have added in a previous step, and the expected location of content that we will listen to [`IWebView.ScriptNotify`](https://docs.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) events, which we just received from the debugger.
+Injecting the JavaScript bridge into your content requires two items: an instance of `IWebView`, which we have added in a previous step, and the expected location of content that we will listen to [`IWebView.ScriptNotify`](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) events, which we just received from the debugger.
 
 To configure the JavaScript bridge, return to your .NET code-behind and replace the contents with the following.
 
@@ -271,7 +271,7 @@ After initialization, let's check to make sure everything is working by debuggin
 
 - Launch your application
 - Launch **[Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ)**
-- Look for a **Local** **Debug Target** with the title **JavaScript Bridge Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
+- Look for a **Local** **Debug Target** with the title **JavaScript Bridge: Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
 - Click that item to attach the debugger. Once attached a new window will pop up to debug your local content within the WebView.
 - Click on the **Console** tab of the debugger.
 - There should be a message `JavaScript bridge is ready!`
@@ -932,16 +932,23 @@ window.chrome.webview.addEventListener("message", e => console.log(e.data));
 window.chrome.webview.postMessage("World");
 ```
 
-With a host object, mark the class COM visible and add an instance after `EnsureCoreWebView2Async` completes:
+With a host object, first define a COM visible class:
 
 ```csharp
+using System.Runtime.InteropServices;
+
 [ClassInterface(ClassInterfaceType.AutoDual)]
 [ComVisible(true)]
 public class Greeter
 {
     public string Hello(string name) => $"Hello, {name}!";
 }
+```
 
+Then add an instance to the page:
+
+```csharp
+// After EnsureCoreWebView2Async completes:
 webView.CoreWebView2.AddHostObjectToScript("greeter", new Greeter());
 ```
 
