@@ -1,6 +1,8 @@
 # Call native code from JavaScript in the Win32 WebView (no AddWebAllowedObject)
 
-The Win32 [WebViewControl](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol) (EdgeHTML) does not support `AddWebAllowedObject` (sometimes searched as `AddAllowedWebObject`) or `ObjectForScripting`, so you cannot inject a native object into the page. This sample shows a JavaScript bridge that uses `window.external.notify` and the [`ScriptNotify`](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) event, with promise-based calls, for WinForms and WPF. Building something new? Use [WebView2](https://learn.microsoft.com/microsoft-edge/webview2/), which supports [`AddHostObjectToScript`](https://learn.microsoft.com/microsoft-edge/webview2/how-to/hostobject).
+The Win32 [WebViewControl](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol) (EdgeHTML) does not support `AddWebAllowedObject` (sometimes searched as `AddAllowedWebObject`) or `ObjectForScripting`, so you cannot inject a native object into the page. This sample shows a JavaScript bridge that uses `window.external.notify` and the [`ScriptNotify`](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) event, with promise-based calls, for WinForms and WPF.
+
+If you are building a new app, use [WebView2](https://learn.microsoft.com/microsoft-edge/webview2/) instead. WebView2 supports [`AddHostObjectToScript`](https://learn.microsoft.com/microsoft-edge/webview2/how-to/hostobject). See [Migrating to WebView2](#migrating-to-webview2).
 
 ## Status
 
@@ -13,7 +15,7 @@ This sample targets a legacy control. Use it to maintain an existing app, not to
 
 ## How the bridge works
 
-The bridge has two halves: [Bridge.js](JavaScriptBridge/Bridge.js) in the page and [JavaScriptBridge.cs](JavaScriptBridge/JavaScriptBridge.cs) in your app.
+The bridge has two halves: [Bridge.js](JavaScriptBridge/Bridge.js) runs in the page, and [JavaScriptBridge.cs](JavaScriptBridge/JavaScriptBridge.cs) runs in your app.
 
 1. `JavaScriptBridge.CreateAndStart` turns on JavaScript and `ScriptNotify` for the WebView. It also records the URIs that may talk to the bridge.
 2. When the page raises `DOMContentLoaded` from an allowed URI, the bridge injects **Bridge.js** if the page does not already have it. **Bridge.js** creates `window.JavaScriptBridge` and fires a `JavaScriptBridgeReady` event.
@@ -29,7 +31,7 @@ _javaScriptBridge = JavaScriptBridge.CreateAndStart(webView1, new Uri("ms-local-
 _javaScriptBridge.AddScriptingHandler("HelloWorld", @params => $"Hello, {@params["name"]}!");
 ```
 
-In the page, using the `ConnectWebViewBridge` helper defined under [Add Local Content](#add-local-content):
+In the page, using the `ConnectWebViewBridge` helper defined in [Add the page content](#add-the-page-content):
 
 ```javascript
 ConnectWebViewBridge(async function (bridge) {
@@ -38,34 +40,37 @@ ConnectWebViewBridge(async function (bridge) {
 });
 ```
 
+## Prerequisites
+
+- Windows 10, version 1803 or later. The `WebViewControl` class was introduced in that version.
+- Visual Studio with the .NET desktop development workload.
+- .NET Framework 4.6.2 or later. The WebView packages require it.
+
 ## Getting started
 
-These steps build the sample from a new WinForms or WPF project.
+Follow these steps to add the bridge to a new WinForms or WPF app. The examples show both frameworks, so use the one that matches your app.
 
-### Clone
+### Create the project
 
-Clone this repository or download the source code. You will need the contents of **JavaScriptBridge** for this sample.
+1. Clone this repository or download the source code. You need the **JavaScriptBridge** folder.
+1. Create a new WinForms or WPF project that targets .NET Framework 4.6.2 or later.
+1. Install the WebView package for your UI framework, version 6.1.2:
+   - WPF: `Microsoft.Toolkit.Wpf.UI.Controls.WebView`
+   - WinForms: `Microsoft.Toolkit.Forms.UI.Controls.WebView`
+1. Copy the **JavaScriptBridge** folder into your solution folder.
+1. In **Solution Explorer**, right-click your solution, then select **Add** > **Existing Project**. Select `JavaScriptBridge.csproj`.
+1. In the **JavaScriptBridge** project, replace the `Microsoft.Toolkit.Win32.UI.Controls` package with the same WebView package your app uses. Update `Newtonsoft.Json` to 13.0.1 or later.
+1. In your app project, add a project reference to **JavaScriptBridge**.
 
-### Create new project
-
-- Create a new WinForms or WPF project targeting **.NET Framework 4.6.2** or later. Samples are given for both WinForms and WPF, and .NET 4.6.2 is required for the WebView NuGet package.
-- Install the WebView package for your UI framework, version 6.1.2:
-  - WPF: **Microsoft.Toolkit.Wpf.UI.Controls.WebView**
-  - WinForms: **Microsoft.Toolkit.Forms.UI.Controls.WebView**
-- Copy **JavaScriptBridge** project from clone to your solution
-- Use **Add existing project** to add the copied **JavaScriptBridge** project to your new solution.
-- In the copied **JavaScriptBridge** project, replace the **Microsoft.Toolkit.Win32.UI.Controls** reference with the same WebView package your app uses. Update **Newtonsoft.Json** to 13.0.1 or later.
-- From your WinForms or WPF project, use **Add reference** to add the **JavaScriptBridge** project.
-
-The **JavaScriptBridge** project copies **Bridge.js** to the build output. The bridge reads the file by the relative path `Bridge.js`, so the app's working directory must be the output folder. That is the default when you start the app from Visual Studio or from its own folder.
+The **JavaScriptBridge** project copies `Bridge.js` to the build output. The bridge reads the file by the relative path `Bridge.js`, so the working directory of your app must be the output folder. This is the default when you start the app from Visual Studio or from its own folder.
 
 ### Add a WebView
 
-Add a `WebView` control to your window or form. The WPF control is `Microsoft.Toolkit.Wpf.UI.Controls.WebView`, and the WinForms control is `Microsoft.Toolkit.Forms.UI.Controls.WebView`.
+Add a `WebView` control to your window or form. The WPF control is `Microsoft.Toolkit.Wpf.UI.Controls.WebView`. The WinForms control is `Microsoft.Toolkit.Forms.UI.Controls.WebView`.
 
-#### Basic Configuration For WPF
+#### Configure the WebView in WPF
 
-For WPF we assume a WebView has been added with the name *WebView*. Add the control in **MainWindow.xaml** like this:
+These examples name the control `WebView`. Add it to `MainWindow.xaml`:
 
 ```xml
 <Window
@@ -80,7 +85,7 @@ For WPF we assume a WebView has been added with the name *WebView*. Add the cont
 </Window>
 ```
 
-**MainWindow.xaml.cs**
+Then replace the contents of `MainWindow.xaml.cs`:
 
 ```csharp
 using System.Windows;
@@ -104,11 +109,9 @@ namespace AddWebAllowedObject_GettingStarted
 }
 ```
 
-#### Basic Configuration For WinForms
+#### Configure the WebView in WinForms
 
-For WinForms we assume a WebView has been added via the designer with the default name *webView1*.
-
-**Form1.cs**
+These examples use the default designer name, `webView1`. Replace the contents of `Form1.cs`:
 
 ```csharp
 using System.Windows.Forms;
@@ -129,15 +132,13 @@ namespace WindowsFormsApp1
 }
 ```
 
-### Add Local Content
+### Add the page content
 
-In the previous step we use the method `NavigateToLocal(String)` method to navigate to content. To create that content:
+The code in the previous step calls `NavigateToLocal("/Content.html")`. Create that page now.
 
-- Add a new HTML page to your project called **Content.html**.
-- After adding, ensure the property **Copy to Output Directory** is set to **Copy if newer**.
-- Replace the default content with the following
-
-**Content.html**
+1. Add a new HTML page named `Content.html` to your app project.
+1. In the **Properties** window for `Content.html`, set **Copy to Output Directory** to **Copy if newer**.
+1. Replace the contents of `Content.html` with the following markup.
 
 ```html
 <!DOCTYPE html>
@@ -174,36 +175,32 @@ In the previous step we use the method `NavigateToLocal(String)` method to navig
 </html>
 ```
 
-The content includes basic HTML elements, and the `script` block used to wait for the JavaScript bridge to initialize. You can place it wherever you would like, but it is placed in this sample at the end of the `body` tag so as not to block any other scripts, and the DOM has the ability to get ready before parsing and invoking our script.
+The `script` block defines `ConnectWebViewBridge`. This helper runs your code as soon as the bridge is ready. It checks for `window.JavaScriptBridge` first, then waits for the `JavaScriptBridgeReady` event. The script sits at the end of the `body` tag so it does not block other scripts, and the DOM is ready before the script runs.
 
-If you run the sample at this point, there should be an empty window with a title of *JavaScript Bridge: Getting Started*.
+Run the app. You should see an empty window titled *JavaScript Bridge: Getting Started*.
 
-### Debugging your WebView
+### Find the page URI
 
-During the course of development you may wish to debug the content in the WebView instance. To do that, you will need to use the [Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ), available from the Microsoft Store. The same Windows deprecation entry lists the legacy Microsoft Edge (EdgeHTML) DevTools, so this tool may not stay available.
+The bridge only accepts messages from URIs that you allow. To allow your page, you need its exact URI. You can read it with a debugger.
 
-- Install [Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ) from the Microsoft Store.
-- Launch your application.
-- Launch **Microsoft Edge DevTools Preview**
-- Look for a **Local** **Debug Target** with the title **JavaScript Bridge: Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
-- Click that item to attach the debugger. Once attached a new window will pop up to debug your local content within the WebView.
+The debugger for this control is [Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ) from the Microsoft Store. The Windows deprecation entry above also lists the legacy Microsoft Edge (EdgeHTML) DevTools, so this tool may not stay available.
 
-Once the debugger is attached, we will need the URI to configure the JavaScript bridge. You can easily get the URI of the document by following these steps
+1. Install **Microsoft Edge DevTools Preview** from the Microsoft Store.
+1. Start your app.
+1. Start **Microsoft Edge DevTools Preview**.
+1. Under **Local**, find the **Debug Target** titled **JavaScript Bridge: Getting Started**. Its URI is `ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html`.
+1. Select the target. A new window opens with the debugger attached to your page.
+1. Select the **Console** tab.
+1. Type `document.URL` and press **Enter**. The console shows `"ms-local-stream://Microsoft.Win32WebViewHost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html"`.
+1. Copy the value, then close the debugger and your app.
 
-- With the Microsoft Edge DevTools Preview attached to your WebView instance, click on the **Console** tab.
-- Next to the `>` symbol, type `document.URL` which will output `"ms-local-stream://Microsoft.Win32WebViewHost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html"`
-- Copy the returned value. We'll use that in the configuration step.
-- After the value has been copied, close the debugger and your application instance.
+### Start the bridge
 
-### Inject the JavaScript bridge into your content
+To start the bridge, you need two things: the `IWebView` instance you added earlier, and the page URI from the previous step. The bridge listens for [`IWebView.ScriptNotify`](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) events from that URI only.
 
-Injecting the JavaScript bridge into your content requires two items: an instance of `IWebView`, which we have added in a previous step, and the expected location of content that we will listen to [`IWebView.ScriptNotify`](https://learn.microsoft.com/uwp/api/windows.web.ui.interop.webviewcontrol.scriptnotify) events, which we just received from the debugger.
+#### Start the bridge in WPF
 
-To configure the JavaScript bridge, return to your .NET code-behind and replace the contents with the following.
-
-#### Adding JavaScript Bridge for WPF
-
-**MainWindow.xaml.cs**
+Replace the contents of `MainWindow.xaml.cs`:
 
 ```csharp
 using System;
@@ -235,9 +232,9 @@ namespace AddWebAllowedObject_GettingStarted
 }
 ```
 
-#### Adding JavaScript Bridge for WinForms
+#### Start the bridge in WinForms
 
-**Form1.cs**
+Replace the contents of `Form1.cs`:
 
 ```csharp
 using Microsoft.Toolkit.Win32.UI.Controls.WebViewExtensions;
@@ -267,24 +264,21 @@ namespace WindowsFormsApp1
 }
 ```
 
-After initialization, let's check to make sure everything is working by debugging the WebView:
+To check that the bridge loaded:
 
-- Launch your application
-- Launch **[Microsoft Edge DevTools Preview](https://www.microsoft.com/store/productId/9MZBFRMZ0MNJ)**
-- Look for a **Local** **Debug Target** with the title **JavaScript Bridge: Getting Started** with the URI **ms-local-stream://microsoft.win32webviewhost_cw5n1h2txyewy_4c6f63616c436f6e74656e74/Content.html**
-- Click that item to attach the debugger. Once attached a new window will pop up to debug your local content within the WebView.
-- Click on the **Console** tab of the debugger.
-- There should be a message `JavaScript bridge is ready!`
+1. Start your app.
+1. Start **Microsoft Edge DevTools Preview** and attach to the **JavaScript Bridge: Getting Started** target, as in [Find the page URI](#find-the-page-uri).
+1. Select the **Console** tab.
 
-If you see the ready message, the JavaScript bridge was successfully injected into the running WebView instance.
+The console shows `JavaScript bridge is ready!`. If it does not, see [Troubleshooting](#troubleshooting).
 
-### Calling .NET methods from JavaScript
+### Call .NET methods from JavaScript
 
-Now that everything is configured and the JavaScript bridge is injected into your content page, we can begin using it by configuring a scripting handler. A script handler takes two pieces of information, an identifier, and a delegate to execute with named parameters and an optional return value. To register a script handler from our .NET code, use the `JavaScriptBridge.AddScriptingHandler` method.
+A scripting handler connects a name to a .NET delegate. The delegate takes named parameters and can return a value. Register a handler with `JavaScriptBridge.AddScriptingHandler`.
 
-#### Add Scripting Handler for WPF
+#### Add a scripting handler in WPF
 
-**MainWindow.xaml.cs**
+Replace the contents of `MainWindow.xaml.cs`:
 
 ```csharp
 using System;
@@ -319,9 +313,9 @@ namespace AddWebAllowedObject_GettingStarted
 }
 ```
 
-#### Add Scripting Handler for WinForms
+#### Add a scripting handler in WinForms
 
-**Form1.cs**
+Replace the contents of `Form1.cs`:
 
 ```csharp
 using Microsoft.Toolkit.Win32.UI.Controls.WebViewExtensions;
@@ -353,19 +347,17 @@ namespace WindowsFormsApp1
 }
 ```
 
-A scripting handler is registered with the id *HelloWorld*, which then specifies a lambda taking the named parameters called *@params*, which is a `Dictionary<string, object>` instance.
+This code registers a handler named `HelloWorld`. The lambda takes the named parameters as `@params`, a `Dictionary<string, object>`.
 
-### Calling HelloWorld scripting handler
+### Call the HelloWorld handler
 
-To invoke our registered scripting handler *HelloWorld*, we need to invoke the `callNative` method on the JavaScript bridge injected into our page. For our sample we will handle the click event of the **Hello, World!** button and call the JavaScript bridge.
+To call `HelloWorld`, the page calls `callNative` on the bridge. In this example, the **Hello, World!** button calls it.
 
-The signature for `callNative` accepts a handlerId, data to pass that handler in the form of named arguments, a success callback function, and an error callback function. The bridge accepts three types of invocations: callbacks, JavaScript Promises, and async/await syntax.  Each implementation is shown in that order and you can pick the one that matches your coding style.
+`callNative` takes a handler ID, optional data for the handler as named arguments, an optional success callback, and an optional error callback. You can call it three ways: with callbacks, with a promise, or with `async` and `await`. Pick the style that matches your code. In each example below, replace the `ConnectWebViewBridge` call in `Content.html`.
 
-#### Hello World using JavaScript Callbacks
+#### Use a callback
 
-This example only passes in the handlerId and a success function.
-
-**Content.html**
+This example passes the handler ID and a success callback.
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -384,13 +376,9 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Hello World using JavaScript Promise
+#### Use a promise
 
-The JavaScript bridge also supports Promises. As before, we invoke `callNative`, which returns a `Promise` (the eventual result) instead of our value.
-
-This example passes in the handlerId as before, and uses `.then` to handle success.
-
-**Content.html**
+Without callbacks, `callNative` returns a `Promise`. This example uses `.then` to handle the result.
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -409,13 +397,9 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Hello World using JavaScript Async/Await
+#### Use async and await
 
-The JavaScript bridge also supports the async/await syntax. As before, we invoke `callNative`, which returns a `Promise`, that we then `await`.
-
-This example passes in the handlerId as before, awaits the response, then outputs to the log as before.
-
-**Content.html**
+This example awaits the `Promise` that `callNative` returns.
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -433,13 +417,13 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-Run your project. After clicking the *Hello, World!* button, you should see the text `Hello, World!` below the button.
+Run your app and select **Hello, World!**. The text `Hello, World!` appears below the button.
 
-### Calling .NET methods with parameters
+### Pass parameters to .NET methods
 
-So far we have used the `HelloWorld` script handler, which takes no parameters and returns a string. Let's now refactor that delegate to take a single parameter, `name`, and include that in the response.
+The `HelloWorld` handler takes no parameters and returns a string. Next, change it to take a `name` parameter and include it in the response.
 
-Let's go back to our .NET code and change the scripting handler from
+In your .NET code, change the handler from this:
 
 ```csharp
 _javaScriptBridge.AddScriptingHandler(
@@ -447,7 +431,7 @@ _javaScriptBridge.AddScriptingHandler(
     @params => "Hello, World!");
 ```
 
-to the following
+To this:
 
 ```csharp
 _javaScriptBridge.AddScriptingHandler(
@@ -455,19 +439,15 @@ _javaScriptBridge.AddScriptingHandler(
     @params => $"Hello, {@params["name"]}!");
 ```
 
-We also need to change the JavaScript to pass in the data. `callNative` includes a parameter for passing the handler data, after passing the handler id. The data is expected to be passed as a set of key/value pairs as a JavaScript object.
+In the page, pass the data as the second argument to `callNative`, after the handler ID. The data is a JavaScript object of key and value pairs:
 
 ```javascript
 const handlerData = { name: "World" };
 ```
 
-The data must be passed as a set of key/value pairs. In the above example, a new JavaScript object with the property `name` is created, with a string value of *World*. This is deserialized by the bridge into a `Dictionary<string,object>` that is passed in as the *@params* parameter.
+This object has one property, `name`, with the string value `World`. The bridge turns it into the `Dictionary<string, object>` that the handler receives as `@params`.
 
-Here is what the inclusion of the data parameter looks like in the various syntaxes in JavaScript.
-
-#### Hello World with Parameters using JavaScript Callback
-
-**Content.html**
+#### Pass parameters with a callback
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -487,9 +467,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Hello World with Parameters using JavaScript Promise
-
-**Content.html**
+#### Pass parameters with a promise
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -510,9 +488,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Hello World with Parameters using JavaScript Async/Await
-
-**Content.html**
+#### Pass parameters with async and await
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -531,13 +507,13 @@ ConnectWebViewBridge(function(bridge) {
     });
 ```
 
-If you run the project you'll see the familiar `Hello, World!` text below the button. If you change the handler data to something else (say, your name), you would expect to see something like `Hello, Richard!` below the button.
+Run your app and select **Hello, World!**. The text `Hello, World!` appears below the button. If you change `World` to another name, the text changes to match.
 
-### Exception Handling
+### Handle exceptions
 
-It may be the case that when calling .NET code an exception is encountered. This is handled automatically by the JavaScript bridge and is raised as either a callback, JavaScript Promise reject, or an exception that can be caught with async/await. In each case an object representing the .NET exception is returned via the bridge.
+When a .NET handler throws an exception, the bridge returns an object that describes the exception. With a callback, the bridge passes it to your error callback. With a promise, the bridge rejects the promise. With `await`, your code can catch it.
 
-Let's go back to our .NET code and change the scripting handler from
+In your .NET code, change the handler from this:
 
 ```csharp
 _javaScriptBridge.AddScriptingHandler(
@@ -545,7 +521,7 @@ _javaScriptBridge.AddScriptingHandler(
     @params => $"Hello, {@params["name"]}!");
 ```
 
-to the following
+To this:
 
 ```csharp
 _javaScriptBridge.AddScriptingHandler("HelloWorld", @params =>
@@ -569,13 +545,11 @@ _javaScriptBridge.AddScriptingHandler("HelloWorld", @params =>
 });
 ```
 
->When implementing this in your project it is always a good idea to check the parameters coming from JavaScript.
+Check every parameter that comes from JavaScript, as this handler does.
 
-To handle the error events, the JavaScript code needs to be altered to provide an error callback or catch the exception from the `Promise`. Examples are given below for each syntax.
+Then add error handling to the page. Use the example that matches your style.
 
-#### Handling Exceptions using JavaScript Callback
-
-**Content.html**
+#### Handle exceptions with a callback
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -604,9 +578,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Handling Exceptions using JavaScript Promise
-
-**Content.html**
+#### Handle exceptions with a promise
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -632,9 +604,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### JavaScript Async/Await
-
-**Content.html**
+#### Handle exceptions with async and await
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -660,32 +630,32 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-If you run the project the output should appear as before: `Hello, World!`. To see the error handler in action, change the JavaScript code from
+Run your app. The output is `Hello, World!`, as before. To see the error handler run, change the data in the page from this:
 
 ```javascript
 const handlerData = { name: "World" };
 ```
 
-to
+To this:
 
 ```javascript
 const handlerData = { name2: "World" };
 ```
 
-Since the .NET script handler is expecting a dictionary key the name "*name*", after clicking the button you should see the following on the screen
+The handler expects a key named `name`. When you select the button, the page shows this error:
 
 ```json
 {
-  "message": "Expected parameter 'name'\\r\\nParameter name: params",
+  "message": "Expected parameter 'name'.\\r\\nParameter name: params",
   "data": {},
   "source": "JavaScript Bridge",
   "hResult": -2146233088
 }
 ```
 
-### Returning Complex Objects
+### Return complex objects
 
-The JavaScript bridge is also capable of returning .NET objects and structures, so long as they can be serialized to JSON. Let's return to our .NET code and update the scripting handler.
+The bridge can also return .NET objects, as long as they can be serialized to JSON. Update the handler in your .NET code:
 
 ```csharp
 _javaScriptBridge.AddScriptingHandler("HelloWorld", @params =>
@@ -726,7 +696,7 @@ _javaScriptBridge.AddScriptingHandler("HelloWorld", @params =>
 });
 ```
 
-The handler includes checks on the number of parameters as before, and builds up a .NET type `AddressBookEntry` based on the keys of the dictionary passed in. To compile the sample, we'll also need to add the `AddressBookEntry` class to the project.
+The handler checks the number of parameters, as before. Then it builds an `AddressBookEntry` from the keys in the dictionary. Add the `AddressBookEntry` class to your project so the code compiles:
 
 ```csharp
 public class AddressBookEntry
@@ -783,7 +753,7 @@ public class AddressBookEntry
 }
 ```
 
-If we run the sample without changing the JavaScript, the following error is returned
+If you run the app without changing the page, the bridge returns this error:
 
 ```json
 {
@@ -794,9 +764,9 @@ If we run the sample without changing the JavaScript, the following error is ret
 }
 ```
 
-The new delegate function expects some additional parameters to be sent in order to build the `AddressBookEntry`. Since one parameter was sent, the dictionary had one key, but it was not a key that was usable by the delegate. As such, it returned a `InvalidOperationException` instead of an empty instance of `AddressBookEntry`.
+The page sent one parameter, but the handler cannot use its key to build an `AddressBookEntry`. So the handler throws an `InvalidOperationException` instead of returning an empty entry.
 
-To take advantage of the new `AddressBookEntry` object, updates need to be made to the JavaScript. As before, data is passed in as key/value pairs.
+To fix this, send the keys the handler expects. As before, the data is a JavaScript object of key and value pairs:
 
 ```javascript
 const handlerData = {
@@ -805,7 +775,7 @@ const handlerData = {
         };
 ```
 
-#### Multiple Parameters using JavaScript Callback
+#### Send multiple parameters with a callback
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -837,7 +807,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Multiple Parameters using JavaScript Promise
+#### Send multiple parameters with a promise
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -868,7 +838,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-#### Multiple Parameters using JavaScript Async/Await
+#### Send multiple parameters with async and await
 
 ```javascript
 ConnectWebViewBridge(function(bridge) {
@@ -898,7 +868,7 @@ ConnectWebViewBridge(function(bridge) {
 });
 ```
 
-Running the project will a JSON response of the serialized `AddressBookEntry` class.
+Run your app and select **Hello, World!**. The page shows the serialized `AddressBookEntry`:
 
 ```json
 {
@@ -907,6 +877,14 @@ Running the project will a JSON response of the serialized `AddressBookEntry` cl
   "fullName": "Hello World"
 }
 ```
+
+## Troubleshooting
+
+The bridge writes trace messages with the category `JavaScript Bridge`. When you debug in Visual Studio, they appear in the **Output** window.
+
+- **The console never shows `JavaScript bridge is ready!`.** Check that the URI you passed to `CreateAndStart` matches `document.URL`. The bridge injects `Bridge.js` only for allowed URIs. Also check that `Bridge.js` is in the working directory of your app. The bridge loads the file without awaiting the result, so a missing file does not show an error in your app.
+- **The Output window shows `ScriptNotify received from unknown origin`.** The page URI is not in the allowed list. Pass the exact URI to `CreateAndStart`.
+- **The error message is `Handler '<name>' not supported.`** No handler with that name is registered. Check the name you passed to `AddScriptingHandler`. Names are not case sensitive.
 
 ## Migrating to WebView2
 
@@ -919,7 +897,9 @@ WebView2 has two built-in ways to call native code from JavaScript, so you do no
 | `InvokeScriptAsync` to send a reply | `CoreWebView2.PostWebMessageAsString` or `PostWebMessageAsJson` |
 | `AddScriptingHandler` plus `callNative` | `CoreWebView2.AddHostObjectToScript` plus `chrome.webview.hostObjects` |
 
-With messages, add the `Microsoft.Web.WebView2` package and a `WebView2` control named `webView`. Then, in an `async` method of your window or form:
+### Use web messages
+
+Add the `Microsoft.Web.WebView2` package and a `WebView2` control named `webView`. Then, in an `async` method of your window or form:
 
 ```csharp
 await webView.EnsureCoreWebView2Async();
@@ -927,12 +907,16 @@ webView.CoreWebView2.WebMessageReceived += (sender, e) =>
     webView.CoreWebView2.PostWebMessageAsString($"Hello, {e.TryGetWebMessageAsString()}!");
 ```
 
+In the page:
+
 ```javascript
 window.chrome.webview.addEventListener("message", e => console.log(e.data));
 window.chrome.webview.postMessage("World");
 ```
 
-With a host object, first define a COM visible class:
+### Use a host object
+
+First, define a COM visible class:
 
 ```csharp
 using System.Runtime.InteropServices;
@@ -952,6 +936,8 @@ Then add an instance to the page:
 webView.CoreWebView2.AddHostObjectToScript("greeter", new Greeter());
 ```
 
+In the page, call the method from an `async` function:
+
 ```javascript
 async function greet() {
     const text = await chrome.webview.hostObjects.greeter.Hello("World");
@@ -959,7 +945,7 @@ async function greet() {
 }
 ```
 
-Read more on Microsoft Learn:
+### Learn more about WebView2
 
 - [Interop of native-side and web-side code](https://learn.microsoft.com/microsoft-edge/webview2/how-to/communicate-btwn-web-native)
 - [Call native-side code from web-side code](https://learn.microsoft.com/microsoft-edge/webview2/how-to/hostobject)
